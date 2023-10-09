@@ -9,8 +9,9 @@ from bs4 import BeautifulSoup
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4389.90 Safari/531.36'
-    ,
-    'Cookie': '_pk_id.1.01b8=ea68c6fef4de8841.1656407868.; remember_web_59ba36addc2b2f9401580f014c7f58ea4e30989d=eyJpdiI6IkdPWkphbmQ4Wm04XC9NM1pmVFwvNXdCdz09IiwidmFsdWUiOiJLMWVSbzVYVTlUbnNaNUtrMzlcL2g5Z1NDcFI1MHlyenVhT2ttakxrWnZiYWhWOGhlbGxBR1ZIUUp0RE1UdlJMK2VqTDNwM3c1YkxhV1NKWUw3Z3liMm1rdDBmczJlcVhrTjBkZ2c0MDU4dHZBc1AzdW5PZHRhUFZZXC8yQzYwVjM1Mmw5WVE2aWI3ZytcL3VUZWgyK3Q1OE1hOW16Y3QzYjZreUcwUXloZVZRK29wUlNYc3JvY0plUW01WTF2bk80cmMiLCJtYWMiOiJhZjE4YmUzNzRhZjFmMmEzZWJmNTkxMzNiMGI4OWYxYTk2MGQ3NzUyYzIyYzE5YzRkMDcwMWI2YjBmNmQ4M2Y0In0%3D; _pk_ses.1.01b8=1; XSRF-TOKEN=eyJpdiI6IkJrQWd2RVBqRVI0RVJHSTh6RjZrekE9PSIsInZhbHVlIjoiRTRsZWNvRW1tYTVIS2xmNWV1cWxicWQzVDBzMjIxYnZVdGFuRWhYbUtkRTdWWDVjVHhTd1R5OHdia2dpTWRZbCIsIm1hYyI6IjQ4NDc3ZmNkNWU5NGE5ZDlmOGNkY2UxZjkwOGYyYjYwMDIxMTgyZGMwY2RiMTg5ZDdlOGJlZmIwNGQ3YzAzNDgifQ%3D%3D; wallhaven_session=eyJpdiI6IkhFZGhmNjdpb1dtejJqMk9xWU1Udmc9PSIsInZhbHVlIjoibFljMUIybnlmVW41ZGhcL1dYNjVWbUtpXC9vQitmbG5Ka2NpS0ZKNmdNUkttUDdXOVI2YW5MOTBIYlRSTXhIVXVwIiwibWFjIjoiNDYzMWRhNjI4Yzg4MWMyMjkxN2NiZjk0NzBlNzg2OGVlMzhjOTRhYTBlMGE0YzhjOWVhYjYwOTdkYTg4Y2I3ZiJ9'}
+    # 下载NSFW模式需要网页已登录账号的Cookie，SFW和Sketchy不用
+    ,'Cookie': ''
+    }
 cent = 0
 
 class eachPageThread(threading.Thread):
@@ -49,8 +50,8 @@ class eachPageThread(threading.Thread):
 
             for eachThread in threadingSet:
                 eachThread.join()
-        except:
-            return
+        except Exception as e:
+            print("An error occurred:", e)
 
     def get_enumerate(self):
         return threading.enumerate()
@@ -118,9 +119,20 @@ class Ui_Form(object):
         self.Button_condition_start.clicked.connect(lambda: self.condition_down(Form))
 
         self.Page_input = QtWidgets.QLineEdit(Form)
-        self.Page_input.setGeometry(QtCore.QRect(220, 66, 231, 31))
+        self.Page_input.setGeometry(QtCore.QRect(220, 66, 280, 31))
         self.Page_input.setText("")
         self.Page_input.setObjectName("Page_input")
+
+        # NSFW提示字符串
+        self.Label_cookie = QtWidgets.QLabel(Form)
+        self.Label_cookie.setGeometry(QtCore.QRect(20, 10, 181, 31))
+        self.Label_cookie.setObjectName("Label_cookie")
+
+        # Cookie字符串
+        self.Page_input_cookie = QtWidgets.QLineEdit(Form)
+        self.Page_input_cookie.setGeometry(QtCore.QRect(220, 10, 280, 31))
+        self.Page_input_cookie.setText('')
+        self.Page_input_cookie.setObjectName("Page_input_cookie")
 
         # 单张下载url
         self.Label_page = QtWidgets.QLabel(Form)
@@ -254,6 +266,7 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "WallHaven壁纸批量下载 -- 吾爱发布 -- Lthero"))
+        self.Label_cookie.setText(_translate("Form", "Nsfw模式输入真实账号的Cookie"))
         self.Button_start.setText(_translate("Form", "开始从此页面下载"))
         self.Button_choose_file.setText(_translate("Form", "选择文件夹"))
         self.Label_page.setText(_translate("Form", "输入wallhaven中的网址"))
@@ -292,9 +305,9 @@ class Ui_Form(object):
     def get_filename(self, form):
         self.file = QFileDialog.getExistingDirectory(form, "选择文件夹", ".")
         if self.file != '':
-            self.mesb.about(form, '对不起！', '选择成功  ' + self.file)
+            self.mesb.about(form, '选择文件夹', '选择成功  ' + self.file)
         else:
-            self.mesb.about(form, '对不起！', '选择失败  ')
+            self.mesb.about(form, '选择文件夹', '选择失败  ')
 
     def testIsFinish(self,theThread,form):
         while True:
@@ -336,23 +349,26 @@ class Ui_Form(object):
         ui.Button_start.setEnabled(False)
         ui.Button_choose_file.setEnabled(False)
 
-        ui.mesb.about(form, '对不起！', '开始下载 稍等片刻~~~')
+        ui.mesb.about(form, '提示', '开始下载 稍等片刻~~~')
 
 
 
     def start(self, form):
+        global headers
+        headers['Cookie'] = self.Page_input_cookie.text()
         if self.file != '':
             if self.Page_input.text() != '':
                 try:
                     global cent
                     cent -= cent
                     self.downLoad(self.Page_input.text(), self.spinBox_nums_common.text(), self.file, form)
-                except():
-                    self.mesb.about(form, '对不起！', '出错,重启后再下载')
+                except Exception as e:
+                    print("An error occurred:", e)
+                    self.mesb.about(form, '异常', '出错,重启后再下载({e})')
             else:
-                self.mesb.about(form, '对不起！', '先输入指定页面再开始')
+                self.mesb.about(form, '错误', '先输入指定页面再开始')
         else:
-            self.mesb.about(form, '对不起！', '先选择路径')
+            self.mesb.about(form, '错误', '先选择路径')
 
     def update_categories(self, check_box):
         name = check_box.objectName()
@@ -432,13 +448,14 @@ class Ui_Form(object):
                 else:
                     num = int(self.spinBox_nums_end.text()) - int(self.spinBox_start_num.text()) + 1
                 if num>20:
-                    self.mesb.about(form, '对不起！', '一次性最多下载20页，过多容易导致程序异常')
+                    self.mesb.about(form, '错误', '一次性最多下载20页，过多容易导致程序异常')
                 else:
                     self.downLoad(fixed_url,num,self.file,form)
-            except():
-                self.mesb.about(form, '对不起！', '出错,重启后再下载')
+            except Exception as e:
+                print("An error occurred:", e)
+                self.mesb.about(form, '异常', '出错,重启后再下载({e})')
         else:
-            self.mesb.about(form, '对不起！', '先选择路径')
+            self.mesb.about(form, '错误', '先选择路径')
 
 
 if __name__ == '__main__':
